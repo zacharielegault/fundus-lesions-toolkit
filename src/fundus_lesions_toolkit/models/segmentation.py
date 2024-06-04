@@ -1,5 +1,5 @@
 import warnings
-from typing import Literal, Union, List, Tuple
+from typing import Literal, Union, Tuple
 from functools import lru_cache
 
 import numpy as np
@@ -11,7 +11,7 @@ from fundus_lesions_toolkit.models.hf_hub import download_model
 from fundus_lesions_toolkit.constants import (
     DEFAULT_NORMALIZATION_MEAN,
     DEFAULT_NORMALIZATION_STD,
-    Dataset
+    Dataset,
 )
 
 from fundus_lesions_toolkit.utils.images import (
@@ -22,6 +22,7 @@ from fundus_lesions_toolkit.utils.images import (
 
 Architecture = Literal["unet"]
 EncoderModel = Literal["resnet34"]
+
 
 def segment(
     image: np.ndarray,
@@ -61,9 +62,7 @@ def segment(
     model.eval()
 
     if autofit_resolution:
-        image, roi, transforms = autofit_fundus_resolution(
-            image, image_resolution, return_roi=True
-        )
+        image, roi, transforms = autofit_fundus_resolution(image, image_resolution, return_roi=True)
 
     image = (image / 255.0).astype(np.float32)
     tensor = torch.from_numpy(image).permute((2, 0, 1)).unsqueeze(0).to(device)
@@ -72,9 +71,7 @@ def segment(
         mean = DEFAULT_NORMALIZATION_MEAN
     if std is None:
         std = DEFAULT_NORMALIZATION_STD
-    tensor = Ftv.normalize(
-        tensor, mean=DEFAULT_NORMALIZATION_MEAN, std=DEFAULT_NORMALIZATION_STD
-    )
+    tensor = Ftv.normalize(tensor, mean=DEFAULT_NORMALIZATION_MEAN, std=DEFAULT_NORMALIZATION_STD)
     with torch.inference_mode():
         features = model.encoder(tensor)
         pre_segmentation_features = model.decoder(*features)
@@ -191,6 +188,7 @@ def get_model(
         with torch.inference_mode():
             model = torch.compile(model)
     return model
+
 
 def set_dropout(model, initial_value=0.0):
     warnings.warn(f"Setting dropout to {initial_value}")

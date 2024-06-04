@@ -5,6 +5,7 @@ https://openaccess.thecvf.com/content/ICCV2021/papers/Zhao_Contrastive_Learning_
 By Zhao et al.
 
 """
+
 from enum import IntEnum, auto
 from random import random
 import torch
@@ -12,14 +13,19 @@ import torch.nn.functional as F
 from torchvision.transforms import functional as TF
 
 
-
 class ContrastiveLoss(IntEnum):
     SINGLE_IMAGE = auto()
     CROSS_IMAGES = auto()
-    
-    
-def within_image_loss(img: torch.Tensor, img_jittered: torch.Tensor, masks: torch.Tensor,
-                      tau: float, epsilon: float = 1e-5, **kwargs) -> torch.Tensor:
+
+
+def within_image_loss(
+    img: torch.Tensor,
+    img_jittered: torch.Tensor,
+    masks: torch.Tensor,
+    tau: float,
+    epsilon: float = 1e-5,
+    **kwargs,
+) -> torch.Tensor:
     """
     :param img: Tensor DxHxW Features vector associated to the original image
     :param img_jittered: Same, but from the distorted image (color jittering)
@@ -36,18 +42,25 @@ def within_image_loss(img: torch.Tensor, img_jittered: torch.Tensor, masks: torc
     quadratic_matrix = torch.exp(torch.matmul(img_flatten, jit_flatten) / tau)  # NxN: e_{pq}^{IÎ}
     normalization_matrix = quadratic_matrix.sum(1, keepdim=True)  # Nx1 \Sigma e_{pq}^{IÎ}
     loss = 0
-    for l in masks:
-        l = l.flatten() > 0
-        if not l.any():
+    for label in masks:
+        label = label.flatten() > 0
+        if not label.any():
             continue
-        quad_L = quadratic_matrix[l][:, l]  # LxL
-        loss += -torch.log(quad_L / (normalization_matrix[l] + epsilon)).sum() / l.sum()
+        quad_L = quadratic_matrix[label][:, label]  # LxL
+        loss += -torch.log(quad_L / (normalization_matrix[label] + epsilon)).sum() / label.sum()
     return loss / N
 
 
-def cross_image_loss(img_a: torch.Tensor, img_a_jit: torch.Tensor,
-                     img_b: torch.Tensor, masks_a: torch.Tensor, masks_b: torch.Tensor,
-                     tau: float, epsilon: float = 1e-5, **kwargs) -> torch.Tensor:
+def cross_image_loss(
+    img_a: torch.Tensor,
+    img_a_jit: torch.Tensor,
+    img_b: torch.Tensor,
+    masks_a: torch.Tensor,
+    masks_b: torch.Tensor,
+    tau: float,
+    epsilon: float = 1e-5,
+    **kwargs,
+) -> torch.Tensor:
     """
     :param img_a: Tensor DxHxW Features vector associated to the original image
     :param img_a_jit: Same, but from the distorted version of the image
@@ -79,8 +92,13 @@ def cross_image_loss(img_a: torch.Tensor, img_a_jit: torch.Tensor,
     return loss / N
 
 
-def random_jitter(batch_img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
-                  jitter_proba=0.8, max_hue=0.08):
+def random_jitter(
+    batch_img,
+    mean=(0.485, 0.456, 0.406),
+    std=(0.229, 0.224, 0.225),
+    jitter_proba=0.8,
+    max_hue=0.08,
+):
     proba = random()  # Uniform sort between [0, 1]
     if proba < jitter_proba:
         batch_std = torch.Tensor(std).unsqueeze(0).unsqueeze(2).unsqueeze(3).to(batch_img)
@@ -93,13 +111,13 @@ def random_jitter(batch_img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.22
 
 
 def contrastive_loss_from_batch(model, imgs, gts, loss_type=ContrastiveLoss.SINGLE_IMAGE, **c):
-    gts = F.interpolate(gts.float(), size=c['size']).long()
+    gts = F.interpolate(gts.float(), size=c["size"]).long()
     bg_class = (torch.max(gts, 1, keepdim=True)[0] == 0).long()
     gts = torch.cat([gts, bg_class], 1)
     imgs_jit = random_jitter(imgs.clone())
     b, d, h, w = imgs.shape
     full_features = model(torch.cat([imgs, imgs_jit], 0))
-    full_features = F.interpolate(full_features, size=c['size'])
+    full_features = F.interpolate(full_features, size=c["size"])
     features = full_features[:b]
     features_jit = full_features[b:]
     loss = 0

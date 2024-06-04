@@ -29,3 +29,6 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/ClementPla/fundus-lesions-toolkit/"
 "Bug Tracker" = "https://github.com/ClementPla/fundus-lesions-toolkit/issues"
+
+[tool.ruff]
+line-length = 120
