@@ -31,10 +31,12 @@ def download_model(arch, encoder_name, train_datasets: Union[Dataset, List[Datas
     train_datasets.sort()
 
     if Dataset.ALL in train_datasets:
-        model = HuggingFaceModel.from_pretrained(f"{ROOT_HF}{arch}_{encoder_name}").model
+        model = HuggingFaceModel.from_pretrained(
+            f"{ROOT_HF}{arch}_{encoder_name}", arch=arch, encoder=encoder_name
+        ).model
     else:
         model = HuggingFaceModel.from_pretrained(
-            f"{ROOT_HF}{arch}_{encoder_name}", revision="_".join(train_datasets)
+            f"{ROOT_HF}{arch}_{encoder_name}", revision="_".join(train_datasets), arch=arch, encoder=encoder_name
         ).model
 
     return model
